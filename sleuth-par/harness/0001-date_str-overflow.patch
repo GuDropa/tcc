@@ -1,0 +1,41 @@
+Corrige estouro de pilha de um byte em util_WriteZProbGrid
+
+`util_WriteZProbGrid` declara `char date_str[4]` e em seguida faz
+
+    sprintf (date_str, "%u", proc_GetCurrentYear ());
+
+O ano tem quatro digitos, logo "1991" mais o terminador nulo ocupam cinco
+bytes. E um estouro de pilha de exatamente um byte, disparado em *todo* ano
+de quatro digitos — ou seja, em toda execucao.
+
+As outras duas funcoes que fazem a mesma formatacao declaram o tamanho
+certo: `grw_grow` (growth.c:73) e `grw_landuse` (growth.c:360) usam
+`char date_str[5]`. Esta funcao e a excecao.
+
+Em compiladores de 2001 isso corrompia um byte da pilha em silencio. Com o
+_FORTIFY_SOURCE do glibc atual, ligado por padrao no gcc do Ubuntu, o
+processo aborta em __chk_fail:
+
+    *** buffer overflow detected ***: terminated
+
+Sem este patch o SLEUTH original nao roda ate o fim em modo `predict` num
+toolchain moderno, e portanto nao existe baseline para a invariante V7. Nao
+ha como contornar pelo arquivo de cenario: a chamada a util_WriteZProbGrid
+em growth.c:594 e incondicional.
+
+Aplicado sobre a COPIA em harness/build/sleuth-ref/. A arvore SLEUTH/
+permanece intocada (regra §R2 do spec mestre).
+
+Registrado como §B1 de specs/S03-harness.md.
+
+--- a/utilities.c
++++ b/utilities.c
+@@ -795,7 +795,7 @@
+ {
+   char func[] = "util_WriteZProbGrid";
+   char filename[MAX_FILENAME_LEN];
+-  char date_str[4];
++  char date_str[5];
+   int lower_bounds[MAX_PROBABILITY_COLORS];
+   int upper_bounds[MAX_PROBABILITY_COLORS];
+   int indices[MAX_PROBABILITY_COLORS];

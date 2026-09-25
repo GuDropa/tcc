@@ -1,0 +1,100 @@
+=== T0 do S08 — remedicao de D1/D2 ===
+Sun Sep 20 23:02:45 -03 2026
+HEAD: 069528e
+sonda modificada? NAO (limpa, como T0 exige)
+parametros: REP=21 GRUPO=7 THREADS='1 8' (iguais aos da rodada 2)
+
+== sondagem do S08: de onde vem o ruido do total do ano? ==
+   21 repeticoes da MESMA configuracao, clock_gettime(CLOCK_MONOTONIC)
+   grade ladrilhada, 5 anos, --variant A. I/O fora da conta (V11).
+
+############ 1 thread(s) ############
+etapa             min  mediana      max   espalh.       cv 1a/2a met.
+---------------------------------------------------------------------
+pool             0.00     0.00     0.02      0.0%   447.2%      +0.0%
+zera delta      20.01    21.32    36.84     78.9%    24.3%      -1.8%
+fase 1n3         0.07     0.09     0.16    100.0%    23.2%     -11.1%
+fase 4          83.13    83.87    88.95      6.9%     1.9%      -0.2%
+fase 5          14.00    14.49    18.14     28.6%     7.7%      -5.0%
+filtros         33.49    34.94    42.09     24.6%     5.3%      -1.5%
+merge           22.68    24.07    26.75     16.9%     4.2%      -1.9%
+total          174.50   179.08   207.36     18.3%     5.3%      -1.2%
+
+  total do ano, na ordem de execucao (ms):
+    207.36 191.98 178.10 201.90 181.90 179.08 198.34 176.84 180.14 
+    176.40 178.20 174.50 179.96 200.72 177.73 178.83 177.90 181.59 
+    175.09 180.16 177.73 
+############ 8 thread(s) ############
+etapa             min  mediana      max   espalh.       cv 1a/2a met.
+---------------------------------------------------------------------
+pool             5.27     6.80    15.72    153.7%    41.5%     +16.4%
+zera delta      10.45    11.92    14.93     37.6%     9.9%      +4.1%
+fase 1n3         0.66     0.75     0.92     34.7%     7.4%      -2.7%
+fase 4          35.53    37.46    43.87     22.3%     6.0%      +0.7%
+fase 5          14.70    16.18    21.43     41.6%     9.1%      -0.5%
+filtros         14.15    14.72    17.61     23.5%     5.7%      -1.0%
+merge           11.26    11.91    12.96     14.3%     3.4%      +0.8%
+total           94.63    98.66   125.93     31.7%     8.0%      +1.9%
+
+  total do ano, na ordem de execucao (ms):
+    97.84 96.72 125.93 100.29 96.29 98.23 97.75 98.26 113.35 98.66 
+    110.08 98.60 109.88 109.53 97.90 94.63 110.10 100.05 117.05 95.01 
+    103.94 
+############ 2. qual estimador reproduz? ############
+  A serie de 21 e partida em grupos de 7, na ordem de execucao, e
+  cada estimador e calculado por grupo. Espalhamento MENOR entre grupos
+  = estimador mais reproduzivel. Esta e a escolha que o S08 precisa.
+
+threads     estimador  por grupo    espalh.      vale?
+----------------------------------------------------------------
+1                 min   178.1 174.5 175.1         2.1%   sim
+1             mediana   192.0 178.2 177.9         7.9%   limitrofe
+1               media   191.2 181.0 178.4         7.2%   limitrofe
+----------------------------------------------------------------
+8                 min   96.3 98.3 94.6            3.8%   sim
+8             mediana   97.8 109.5 100.0         11.9%   NAO
+8               media   101.9 105.5 102.7         3.5%   sim
+----------------------------------------------------------------
+
+-- como ler --
+
+A coluna que decide o recorte do S08 e a ULTIMA, "1a/2a met." — a mediana da
+segunda metade das repeticoes contra a da primeira, na ordem em que rodaram.
+
+  . perto de zero, com "espalh." e "cv" nao nulos
+      -> o ruido e ALEATORIO. Mais repeticao o reduz (cai com a raiz de N), e
+         o caminho do S08 e T8: --repeat N cronometrando dentro do processo,
+         que e o que V11 ja pede e o S03 adiou. Com o instrumento consertado,
+         a tabela de §T do mestre e publicavel como esta recortada.
+
+  . sistematicamente POSITIVA (a segunda metade mais lenta)
+      -> e DERIVA, nao ruido. Repetir nao resolve: --repeat so move a deriva
+         para dentro do processo, e a media de uma serie que sobe e uma media
+         de nada. Ai o S08 muda de forma — publica por etapa (§B29) ou troca
+         de maquina (questao 2 do §10 do HANDOFF). NAO escreva o spec do S08
+         pedindo tabela de ano inteiro antes de resolver isto.
+
+  . positiva MAS com a ultima execucao no piso
+      -> nao e deriva, e CONTAMINACAO UNILATERAL: um piso com picos para cima,
+         e os picos calharam de cair na segunda metade. Confira sempre a
+         sequencia crua impressa acima antes de ler a coluna — a estatistica
+         de duas metades nao distingue "subiu" de "teve picos no fim", e a
+         diferenca entre as duas decide o estagio. Deriva termina alto;
+         contaminacao volta ao piso.
+         Neste caso a pergunta deixa de ser "quantas repeticoes" e passa a ser
+         "qual estimador", que e a secao 2.
+
+A outra coluna que importa e "cv", por slot. O total e a SOMA dos sete
+(spread.c:111), entao ele nao pode ser mais ruidoso que todos eles: se o total
+espalhar mais que a fase 4, ha um slot espalhando mais ainda, e ele esta na
+tabela. Ache-o pelo nome antes de teorizar sobre a causa — este projeto ja
+gastou uma sessao inteira atribuindo a cache um efeito que era carga de fundo
+(§B23, retirado por §B25).
+
+A linha de 1 thread e a regua: nao ha thread, barreira nem trava, entao e o
+serial de antes mais a conta da faixa, e todo numero dali e ruido por
+construcao. Se a 1 thread ja der espalhamento grande, o problema nao e
+paralelismo e nenhuma mudanca em par.c vai melhora-lo.
+
+=== rc=0 ===
+Sun Sep 20 23:03:28 -03 2026

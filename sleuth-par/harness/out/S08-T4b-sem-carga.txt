@@ -1,0 +1,121 @@
+=== T4b do S08 (2a tentativa) — braco SEM CARGA ===
+Sun Sep 20 23:34:03 -03 2026
+HEAD: 069528e
+sonda modificada? NAO (identica a da T0 e da 1a tentativa)
+
+--- GUARDA: containers no ar ---
+containerd-shims: 0
+docker.service:   inactive
+uptime (detecta restart do WSL):  23:34:03 up 19 min,  1 user,  load average: 0.52, 0.33, 0.22
+GUARDA OK: nenhum container.
+
+--- processos pesados que sobraram ---
+your 131072x1 screen size is bogus. expect trouble
+50900 snapd
+22864 unattended-upgr
+15980 systemd-journal
+15500 snapfuse
+13148 systemd
+12784 systemd-resolve
+11696 systemd
+ 9588 bash
+               total        used        free      shared  buff/cache   available
+Mem:            7629         740        5653           3        1495        6888
+
+== sondagem do S08: de onde vem o ruido do total do ano? ==
+   21 repeticoes da MESMA configuracao, clock_gettime(CLOCK_MONOTONIC)
+   grade ladrilhada, 5 anos, --variant A. I/O fora da conta (V11).
+
+############ 1 thread(s) ############
+etapa             min  mediana      max   espalh.       cv 1a/2a met.
+---------------------------------------------------------------------
+pool             0.00     0.00     0.00      0.0%     0.0%      +0.0%
+zera delta      19.54    19.96    31.45     59.7%    11.8%      -0.2%
+fase 1n3         0.08     0.08     0.14     75.0%    16.0%      +0.0%
+fase 4          82.44    82.79    85.31      3.5%     0.8%      -0.0%
+fase 5          13.37    13.77    14.83     10.6%     2.9%      -3.4%
+filtros         32.55    33.52    34.24      5.0%     1.4%      -0.1%
+merge           22.02    22.45    24.60     11.5%     3.3%      -3.0%
+total          170.91   172.94   185.36      8.4%     1.8%      -0.4%
+
+  total do ano, na ordem de execucao (ms):
+    185.36 170.91 172.94 174.71 177.83 177.24 173.18 175.14 171.33 
+    172.51 173.64 172.44 175.20 172.12 172.55 171.67 172.11 171.91 
+    173.61 173.15 172.85 
+############ 8 thread(s) ############
+etapa             min  mediana      max   espalh.       cv 1a/2a met.
+---------------------------------------------------------------------
+pool             4.95     5.81    14.05    156.6%    42.6%      -1.0%
+zera delta      10.75    11.52    12.99     19.4%     6.0%      +0.3%
+fase 1n3         0.69     0.74     0.81     16.2%     3.5%      +0.0%
+fase 4          33.65    35.18    36.59      8.4%     2.5%      -1.4%
+fase 5          14.58    15.27    16.99     15.8%     3.9%      -2.8%
+filtros         13.59    13.79    14.42      6.0%     1.6%      +0.6%
+merge           10.82    11.20    11.53      6.3%     1.5%      +0.2%
+total           90.51    93.84   103.21     13.5%     4.4%      -2.2%
+
+  total do ano, na ordem de execucao (ms):
+    95.67 90.51 100.17 93.01 102.81 93.84 101.26 91.57 100.33 94.81 
+    103.21 92.49 101.63 92.71 91.87 93.82 92.03 101.18 93.74 100.15 
+    92.34 
+############ 2. qual estimador reproduz? ############
+  A serie de 21 e partida em grupos de 7, na ordem de execucao, e
+  cada estimador e calculado por grupo. Espalhamento MENOR entre grupos
+  = estimador mais reproduzivel. Esta e a escolha que o S08 precisa.
+
+threads     estimador  por grupo    espalh.      vale?
+----------------------------------------------------------------
+1                 min   170.9 171.3 171.7         0.4%   sim
+1             mediana   174.7 172.5 172.6         1.3%   sim
+1               media   176.0 173.2 172.5         2.0%   sim
+----------------------------------------------------------------
+8                 min   90.5 91.6 91.9            1.5%   sim
+8             mediana   95.7 94.8 93.7            2.1%   sim
+8               media   96.8 96.7 95.0            1.8%   sim
+----------------------------------------------------------------
+
+-- como ler --
+
+A coluna que decide o recorte do S08 e a ULTIMA, "1a/2a met." — a mediana da
+segunda metade das repeticoes contra a da primeira, na ordem em que rodaram.
+
+  . perto de zero, com "espalh." e "cv" nao nulos
+      -> o ruido e ALEATORIO. Mais repeticao o reduz (cai com a raiz de N), e
+         o caminho do S08 e T8: --repeat N cronometrando dentro do processo,
+         que e o que V11 ja pede e o S03 adiou. Com o instrumento consertado,
+         a tabela de §T do mestre e publicavel como esta recortada.
+
+  . sistematicamente POSITIVA (a segunda metade mais lenta)
+      -> e DERIVA, nao ruido. Repetir nao resolve: --repeat so move a deriva
+         para dentro do processo, e a media de uma serie que sobe e uma media
+         de nada. Ai o S08 muda de forma — publica por etapa (§B29) ou troca
+         de maquina (questao 2 do §10 do HANDOFF). NAO escreva o spec do S08
+         pedindo tabela de ano inteiro antes de resolver isto.
+
+  . positiva MAS com a ultima execucao no piso
+      -> nao e deriva, e CONTAMINACAO UNILATERAL: um piso com picos para cima,
+         e os picos calharam de cair na segunda metade. Confira sempre a
+         sequencia crua impressa acima antes de ler a coluna — a estatistica
+         de duas metades nao distingue "subiu" de "teve picos no fim", e a
+         diferenca entre as duas decide o estagio. Deriva termina alto;
+         contaminacao volta ao piso.
+         Neste caso a pergunta deixa de ser "quantas repeticoes" e passa a ser
+         "qual estimador", que e a secao 2.
+
+A outra coluna que importa e "cv", por slot. O total e a SOMA dos sete
+(spread.c:111), entao ele nao pode ser mais ruidoso que todos eles: se o total
+espalhar mais que a fase 4, ha um slot espalhando mais ainda, e ele esta na
+tabela. Ache-o pelo nome antes de teorizar sobre a causa — este projeto ja
+gastou uma sessao inteira atribuindo a cache um efeito que era carga de fundo
+(§B23, retirado por §B25).
+
+A linha de 1 thread e a regua: nao ha thread, barreira nem trava, entao e o
+serial de antes mais a conta da faixa, e todo numero dali e ruido por
+construcao. Se a 1 thread ja der espalhamento grande, o problema nao e
+paralelismo e nenhuma mudanca em par.c vai melhora-lo.
+
+--- censo DEPOIS (nada subiu durante a medida?) ---
+containerd-shims: 0
+ 23:34:46 up 19 min,  1 user,  load average: 0.77, 0.42, 0.26
+=== rc=0 ===
+Sun Sep 20 23:34:46 -03 2026

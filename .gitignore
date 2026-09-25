@@ -1,0 +1,52 @@
+# artefatos de compilacao
+*.o
+*.a
+*.d
+*.so
+*.exe
+*.out
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+
+# Binarios que vieram no tarball do SLEUTH: grow e um ELF MIPS N32 de 2001 e
+# grow.exe e de 2005 — nao rodam aqui e nao sao reconstruiveis, sao conteudo
+# original inutilizavel. O baseline utilizavel e construido por
+# sleuth-par/harness (make baseline), a partir de uma copia, e vive em
+# sleuth-par/harness/build/ (coberto pela regra build/ acima).
+SLEUTH/grow
+SLEUTH/grow.exe
+SLEUTH/GD/*.exe
+SLEUTH/GD/lib*.a*
+
+# binario do prototipo (ELF sem extensao, nao casa com *.exe)
+sleuth-par/sleuth-par
+
+# binario do teste do gerador (S04). O FONTE tests/rng_test.c e versionado; o
+# executavel e reconstruido por `make rngtest`.
+sleuth-par/tests/rng_test
+
+# Grades ladrilhadas (harness/mktiled.sh): derivadas do demo200 por repeticao
+# exata, 33 MB a 2000x2000, reconstruidas em segundos. Mesma categoria do
+# build/ — nao se versiona o que se reconstroi.
+#
+# O demo200 em si CONTINUA versionado, e por isso a excecao explicita: ele vem
+# dos GIFs do Project Gigalopolis e e o unico dado real que o projeto tem.
+sleuth-par/data/demo*/
+!sleuth-par/data/demo200/
+
+# saidas de execucao
+SLEUTH/Output/**/*.gif
+SLEUTH/Output/**/*.log
+sleuth-par/out/
+*.dump
+
+# editor / SO
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
